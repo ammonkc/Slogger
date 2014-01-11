@@ -41,23 +41,23 @@ config = {
 $slog.register_plugin({ 'class' => 'FacebookIFTTTLogger', 'config' => config })
 
 class FacebookIFTTTLogger < Slogger
-	require 'date'
-	require 'time'
+  require 'date'
+  require 'time'
 
-	def do_log
-	    if @config.key?(self.class.name)
-    	  config = @config[self.class.name]
-      		if !config.key?('facebook_ifttt_input_file') || config['facebook_ifttt_input_file'] == []
-        		@log.warn("FacebookIFTTTLogger has not been configured or an option is invalid, please edit your slogger_config file.")
-        		return
-      		end
-    	else
-      		@log.warn("FacebookIFTTTLogger has not been configured or a feed is invalid, please edit your slogger_config file.")
-      	return
+  def do_log
+    if @config.key?(self.class.name)
+      config = @config[self.class.name]
+        if !config.key?('facebook_ifttt_input_file') || config['facebook_ifttt_input_file'] == []
+          @log.warn("FacebookIFTTTLogger has not been configured or an option is invalid, please edit your slogger_config file.")
+          return
+        end
+    else
+         @log.warn("FacebookIFTTTLogger has not been configured or a feed is invalid, please edit your slogger_config file.")
+        return
     end
 
     tags = config['facebook_ifttt_tags'] || ''
-    tags = "\n\n#{@tags}\n" unless @tags == ''
+    tags = "\n\n#{tags}\n" unless @tags == ''
 
     inputFile = config['facebook_ifttt_input_file']
 
@@ -69,10 +69,13 @@ class FacebookIFTTTLogger < Slogger
     pm      = /PM\Z/
 
     last_run = @timespan
+    today = Time.new
+    today = Time.local(today.year, today.month, today.day)
 
     ready = false
     inpost = false
     posttext = ""
+    statusline = ""
 
     options = {}
     options['starred'] = config['facebook_ifttt_star']
@@ -84,7 +87,7 @@ class FacebookIFTTTLogger < Slogger
     if !content.empty?
       each_selector = RUBY_VERSION < "1.9.2" ? :each : :each_line
       content.send(each_selector) do | line|
-         if line =~ regDate
+        if line =~ regDate
           inpost = false
           line = line.strip
           line = line.gsub(regDate, "")
@@ -96,30 +99,32 @@ class FacebookIFTTTLogger < Slogger
           hour,min = parseTime.split(/:/)
 
           month = Date::MONTHNAMES.index(month)
-          ltime = Time.local(year, month, day, hour, min, 0, 0)
+          ltime = Time.local(year, month, day)
           date = ltime.to_i
 
-          if not date > last_run.to_i
-            posttext = ""
-            next
+          if date == today.to_i
+            posttext += "* #{statusline}\n"
+            statusline = ""
           end
 
-          options['datestamp'] = ltime.utc.iso8601
-          ready = true
-  			 elsif line =~ regPost or inpost == true
-            inpost = true
-  			   	line = line.gsub(regPost, "")
-            posttext += line
-            ready = false
-  		  end
-
-        if ready
-          sl = DayOne.new
-          options['content'] = "#### FacebookIFTTT\n\n#{posttext}\n\n#{tags}"
-          sl.to_dayone(options)
+          if not posttext == ""
+            options['datestamp'] = ltime.utc.iso8601
+            ready = true
+          end
+        elsif line =~ regPost or inpost == true
+          inpost = true
+          line = line.gsub(regPost, "")
+          statusline = line
           ready = false
-          posttext = ""
         end
+      end
+
+      if ready
+        sl = DayOne.new
+        options['content'] = "## Facebook\n\n### Status Updates\n#{posttext}\n\n#{tags}"
+        sl.to_dayone(options)
+        ready = false
+        posttext = ""
       end
     end
   end

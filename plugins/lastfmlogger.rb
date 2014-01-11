@@ -112,7 +112,7 @@ class LastFMLogger < Slogger
       }
 
       if content != ''
-        entrytext = "## #{rss_feed['title']} for #{today.strftime(@date_format)}\n\n" + content + "\n#{tags}"
+        entrytext = "## Music\n\n### #{rss_feed['title']} for #{today.strftime(@date_format)}\n\n" + content + "\n#{tags}"
       end
       DayOne.new.to_dayone({'content' => entrytext}) unless entrytext == ''
     end
