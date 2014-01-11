@@ -56,7 +56,7 @@ class WithingsIFTTTLogger < Slogger
     end
 
     tags = config['withings_ifttt_tags'] || ''
-    tags = "\n\n#{@tags}\n" unless @tags == ''
+    tags = "\n\n#{tags}\n" unless @tags == ''
 
     inputFile = config['withings_ifttt_input_file']
 
