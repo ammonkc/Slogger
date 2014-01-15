@@ -86,7 +86,7 @@ class PinboardLogger < Slogger
             sl.to_dayone(options)
           end
         }
-        output += "#### [#{rss.channel.title}](#{rss.channel.link})\n\n" + feed_output + "\n" unless feed_output == ''
+        output += "### [#{rss.channel.title}](#{rss.channel.link})\n\n" + feed_output + "\n" unless feed_output == ''
       rescue Exception => e
         puts "Error getting posts for #{rss_feed}"
         p e
