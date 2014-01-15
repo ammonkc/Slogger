@@ -60,11 +60,11 @@ class Instagram < Slogger
       @tags = "\n\n#{config['instagram_tags']}\n" unless config['instagram_tags'] == ''
       file_name = file
       file_read = File.readlines(file_name)
-      
+
       file_read.each do |item|
         item.strip()
       end
-      
+
       #
       #   This is to assume that the file reads like this:
       #   File URL
@@ -80,14 +80,14 @@ class Instagram < Slogger
       options['starred'] = false
       options['uuid'] = %x{uuidgen}.gsub(/-/,'').strip
       options['content'] = "## Instagram Photo\n\n#{image_caption}#{@tags}"
-            
+
       sl = DayOne.new
       sl.save_image(image_url,options['uuid']) if image_url
       sl.to_dayone(options)
     end
 
     file_path = config['ifttt_file_path']
-    
+
     Dir.glob(file_path + '/*.txt') do |inst_file|
       self.create_content(inst_file)
       unless File.directory?(file_path + '/logged/')
