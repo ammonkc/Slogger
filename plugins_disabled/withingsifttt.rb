@@ -136,3 +136,4 @@ class WithingsIFTTTLogger < Slogger
     end
   end
 end
+

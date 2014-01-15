@@ -70,3 +70,4 @@ class FoursquareLogger < Slogger
     DayOne.new.to_dayone({'content' => entrytext}) unless entrytext == ''
   end
 end
+
