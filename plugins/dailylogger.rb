@@ -156,14 +156,14 @@ class DailyLogger < Slogger
   # Reading
   # ---------------------------
   def do_reading
-    @@daily_content += "### Reading\n\n" + @@reading_content
+    @@daily_content += "### Reading\n\n#{@@reading_content}"
   end
 
   # ---------------------------
   # Places
   # ---------------------------
   def do_places
-    @@daily_content += "### Places\n\n" + @@place_content
+    @@daily_content += "### Places\n\n#{@@place_content}"
   end
 
   # ---------------------------
