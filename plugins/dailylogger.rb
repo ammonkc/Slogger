@@ -32,7 +32,7 @@ $slog.register_plugin({ 'class' => 'DailyLogger', 'config' => config })
 require 'rexml/document'
 
 class DailyLogger < Slogger
-    daily_content = ''
+    @@daily_content = ''
 
   # ---------------------------
   # Instapaper
@@ -91,7 +91,7 @@ class DailyLogger < Slogger
       end
     end
     unless output.strip == ''
-      daily_content += "##### Instapaper\n#{output}"
+      @@daily_content += "##### Instapaper\n#{output}"
     end
   end
 
@@ -147,7 +147,7 @@ class DailyLogger < Slogger
     if content != ''
       entrytext = "### Places\n\n" + content
     end
-    daily_content += entrytext unless entrytext == ''
+    @@daily_content += entrytext unless entrytext == ''
   end
 
   # ---------------------------
@@ -155,7 +155,7 @@ class DailyLogger < Slogger
   # ---------------------------
   def do_log
     options = {}
-    options['content'] = daily_content
+    options['content'] = @@daily_content
     DayOne.new.to_dayone(options)
   end
 end
