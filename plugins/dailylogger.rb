@@ -24,19 +24,26 @@ config = {
     '***Pinboard***',
     'Logs bookmarks for today from Pinboard.in.',
     'pinboard_feeds is an array of one or more Pinboard RSS feeds',
-    'pinboard_digest true will group all new bookmarks into one post, false will split them into individual posts dated when the bookmark was created'
+    'pinboard_digest true will group all new bookmarks into one post, false will split them into individual posts dated when the bookmark was created',
+    '***Withings***',
+    'Parses Body Analyzer measurements logged by IFTTT.com',
+    'withings_ifttt_input_file is a string pointing to the location of the file created by IFTTT.',
+    'The recipe at https://ifttt.com/recipes/56242 determines that location.'
   ],
   'foursquare_feed' => '',
   'instapaper_feeds' => [],
   'instapaper_include_content_preview' => true,
   'pinboard_feeds' => [],
   'pinboard_save_hashtags' => true,
-  'pinboard_digest' => true
+  'pinboard_digest' => true,
+  'withings_ifttt_input_file' => ''
 }
 $slog.register_plugin({ 'class' => 'DailyLogger', 'config' => config })
 
 require 'rexml/document'
 require 'rss/dublincore'
+require 'date'
+require 'time'
 
 class DailyLogger < Slogger
     @@daily_content = ''
@@ -44,6 +51,7 @@ class DailyLogger < Slogger
     @@place_content = ''
     @@bookmark_content = ''
     @@social_content = ''
+    @@fitness_content = ''
 
   # ---------------------------
   # Instapaper
@@ -234,6 +242,101 @@ class DailyLogger < Slogger
 
   end
 
+  # ---------------------------
+  # Withings
+  # ---------------------------
+  def do_withings
+    if @config.key?(self.class.name)
+      config = @config[self.class.name]
+      if !config.key?('withings_ifttt_input_file') || config['withings_ifttt_input_file'] == []
+        @log.warn("WithingsIFTTTLogger has not been configured or an option is invalid, please edit your slogger_config file.")
+        return
+      end
+    else
+      @log.warn("WithingsIFTTTLogger has not been configured or a feed is invalid, please edit your slogger_config file.")
+      return
+    end
+
+    inputFile = config['withings_ifttt_input_file']
+
+    @log.info("Logging WithingsIFTTTLogger posts at #{inputFile}")
+
+    regWeightLb = /^WeightLb: /
+    regLeanMassLb = /^LeanMassLb: /
+    regFatMassLb = /^FatMassLb: /
+    regFatPercent = /^FatPercent: /
+    regDate = /^Date: /
+    ampm    = /(AM|PM)\Z/
+    pm      = /PM\Z/
+
+    last_run = @timespan
+
+    ready = false
+    inpost = false
+    posttext = ""
+    entrytext = ""
+
+    options = {}
+
+    f = File.new(File.expand_path(inputFile))
+    content = f.read
+    f.close
+
+    if !content.empty?
+      each_selector = RUBY_VERSION < "1.9.2" ? :each : :each_line
+      content.send(each_selector) do | line|
+        if line =~ regDate
+          inpost = false
+          line = line.strip
+          line = line.gsub(regDate, "")
+          line = line.gsub(" at ", ' ')
+          line = line.gsub(',', '')
+
+          month, day, year, time = line.split
+          parseTime = DateTime.parse(time).strftime("%H:%M")
+          hour,min = parseTime.split(/:/)
+
+          month = Date::MONTHNAMES.index(month)
+          ltime = Time.local(year, month, day, hour, min, 0, 0)
+          date = ltime.to_i
+
+          if not date > last_run.to_i
+            posttext = ""
+            next
+          end
+
+          options['datestamp'] = ltime.utc.iso8601
+          ready = true
+        elsif line =~ regWeightLb
+            line = line.gsub(regWeightLb, "")
+            posttext += "* Weight: " + line + "\n"
+            ready = false
+        elsif line =~ regLeanMassLb
+            line = line.gsub(regLeanMassLb, "")
+            posttext += "* Lean Mass: " + line + "\n"
+            ready = false
+        elsif line =~ regFatMassLb
+            line = line.gsub(regFatMassLb, "")
+            posttext += "* Fat Mass: " + line + "\n"
+            ready = false
+        elsif line =~ regFatPercent
+            line = line.gsub(regFatPercent, "")
+            posttext += "* BMI: " + line + "\n"
+            ready = false
+        end
+
+        if ready
+          if posttext != ''
+            entrytext = "##### Withings Body Analyzer\n" + posttext + "\n"
+          end
+          @@fitness_content += entrytext unless entrytext == ''
+
+          ready = false
+          posttext = ""
+        end
+      end
+    end
+  end
 
   # ---------------------------
   # Reading
@@ -244,7 +347,7 @@ class DailyLogger < Slogger
     do_instapaper
 
     if @@reading_content != ''
-      content += "\n### Reading\n\n" + @@reading_content
+      content += "### Reading\n\n" + @@reading_content + "\n"
     end
     @@daily_content += content unless content == ''
   end
@@ -258,7 +361,7 @@ class DailyLogger < Slogger
     do_foursquare
 
     if @@place_content != ''
-      content += "\n### Places\n\n" + @@place_content
+      content += "### Places\n\n" + @@place_content + "\n"
     end
     @@daily_content += content unless content == ''
   end
@@ -272,7 +375,7 @@ class DailyLogger < Slogger
     do_pinboard
 
     if @@bookmark_content != ''
-      content += "\n### Bookmarks\n\n" + @@bookmark_content
+      content += "### Bookmarks\n\n" + @@bookmark_content + "\n"
     end
     @@daily_content += content unless content == ''
   end
@@ -287,7 +390,21 @@ class DailyLogger < Slogger
     do_twitter
 
     if @@social_content != ''
-      content += "\n### Social\n\n" + @@social_content
+      content += "### Social\n\n" + @@social_content + "\n"
+    end
+    @@daily_content += content unless content == ''
+  end
+
+  # ---------------------------
+  # Fitness
+  # ---------------------------
+  def do_fitness
+    content = ''
+
+    do_withings
+
+    if @@fitness_content != ''
+      content += "### Fitness\n\n" + @@fitness_content + "\n"
     end
     @@daily_content += content unless content == ''
   end
@@ -297,6 +414,7 @@ class DailyLogger < Slogger
   # ---------------------------
   def do_log
     do_social
+    do_fitness
     do_places
     do_reading
     do_bookmarks
