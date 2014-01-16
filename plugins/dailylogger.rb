@@ -33,6 +33,8 @@ require 'rexml/document'
 
 class DailyLogger < Slogger
     @@daily_content = ''
+    @@reading_content = ''
+    @@place_content = ''
 
   # ---------------------------
   # Instapaper
@@ -91,7 +93,7 @@ class DailyLogger < Slogger
       end
     end
     unless output.strip == ''
-      @@daily_content += "##### Instapaper\n#{output}"
+      @@reading_content += "##### Instapaper\n#{output}"
     end
   end
 
@@ -145,17 +147,31 @@ class DailyLogger < Slogger
       content += "* #{checkinDate} - [#{item.title}](#{item.link})\n"
     }
     if content != ''
-      entrytext = "### Places\n\n" + content
+      entrytext = "##### Foursquare\n" + content
     end
-    @@daily_content += entrytext unless entrytext == ''
+    @@place_content += entrytext unless entrytext == ''
+  end
+
+  # ---------------------------
+  # Reading
+  # ---------------------------
+  def do_reading
+    @@daily_content += "### Reading\n\n" + @@reading_content
+  end
+
+  # ---------------------------
+  # Places
+  # ---------------------------
+  def do_places
+    @@daily_content += "### Places\n\n" + @@place_content
   end
 
   # ---------------------------
   # Log to Dayone
   # ---------------------------
   def do_log
-    do_instapaper
-    do_foursquare
+    do_reading
+    do_places
 
     options = {}
     options['content'] = @@daily_content
