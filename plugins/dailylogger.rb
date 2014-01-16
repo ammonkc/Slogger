@@ -34,9 +34,9 @@ require 'rexml/document'
 class DailyLogger < Slogger
     daily_content = ''
 
-  # -------------------------
+  # ---------------------------
   # Instapaper
-  # -------------------------
+  # ---------------------------
   def do_log
     if @config.key?(self.class.name)
       config = @config[self.class.name]
@@ -91,7 +91,7 @@ class DailyLogger < Slogger
       end
     end
     unless output.strip == ''
-      daily_content += "##### Instapaper\n#{output}#{tags}"
+      daily_content += "##### Instapaper\n#{output}"
     end
   end
 
@@ -145,8 +145,17 @@ class DailyLogger < Slogger
       content += "* #{checkinDate} - [#{item.title}](#{item.link})\n"
     }
     if content != ''
-      entrytext = "### Places\n\n### Foursquare Checkins for #{@timespan.strftime(@date_format)}\n\n" + content + "\n#{@tags}"
+      entrytext = "### Places\n\n" + content
     end
-    DayOne.new.to_dayone({'content' => entrytext}) unless entrytext == ''
+    daily_content += entrytext unless entrytext == ''
+  end
+
+  # ---------------------------
+  # Log to Dayone
+  # ---------------------------
+  def do_log
+    options = {}
+    options['content'] = daily_content
+    DayOne.new.to_dayone(options)
   end
 end
