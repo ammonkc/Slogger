@@ -93,7 +93,7 @@ class DailyLogger < Slogger
       end
     end
     unless output.strip == ''
-      @@reading_content += "##### Instapaper\n#{output}"
+      @@daily_content += "##### Instapaper\n#{output}"
     end
   end
 
@@ -149,7 +149,7 @@ class DailyLogger < Slogger
     if content != ''
       entrytext = "##### Foursquare\n" + content
     end
-    @@place_content += entrytext unless entrytext == ''
+    @@daily_content += entrytext unless entrytext == ''
   end
 
   # ---------------------------
@@ -172,11 +172,11 @@ class DailyLogger < Slogger
   # Log to Dayone
   # ---------------------------
   def do_log
-    do_reading
-    do_places
+    do_instapaper
+    do_foursquare
 
     options = {}
-    options['content'] = @@reading_content
+    options['content'] = @@daily_content
     DayOne.new.to_dayone(options)
   end
 end
