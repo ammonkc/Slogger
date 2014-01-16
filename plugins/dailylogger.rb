@@ -37,7 +37,7 @@ class DailyLogger < Slogger
   # ---------------------------
   # Instapaper
   # ---------------------------
-  def do_log
+  def do_instapaper
     if @config.key?(self.class.name)
       config = @config[self.class.name]
       if !config.key?('instapaper_feeds') || config['instapaper_feeds'] == [] || config['instapaper_feeds'].empty?
@@ -98,7 +98,7 @@ class DailyLogger < Slogger
   # ---------------------------
   # Foursquare
   # ---------------------------
-  def do_log
+  def do_foursquare
     if @config.key?(self.class.name)
       config = @config[self.class.name]
       if !config.key?('foursquare_feed') || config['foursquare_feed'] == ''
