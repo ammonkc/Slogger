@@ -176,7 +176,7 @@ class DailyLogger < Slogger
     do_places
 
     options = {}
-    options['content'] = @@daily_content
+    options['content'] = @@reading_content
     DayOne.new.to_dayone(options)
   end
 end
