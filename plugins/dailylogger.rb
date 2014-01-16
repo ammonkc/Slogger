@@ -31,7 +31,7 @@ $slog.register_plugin({ 'class' => 'DailyLogger', 'config' => config })
 
 require 'rexml/document'
 
-class InstapaperLogger < Slogger
+class DailyLogger < Slogger
   def do_log
     if @config.key?(self.class.name)
       config = @config[self.class.name]
