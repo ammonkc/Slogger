@@ -43,6 +43,7 @@ class DailyLogger < Slogger
     @@reading_content = ''
     @@place_content = ''
     @@bookmark_content = ''
+    @@social_content = ''
 
   # ---------------------------
   # Instapaper
