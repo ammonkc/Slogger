@@ -309,19 +309,19 @@ class DailyLogger < Slogger
           ready = true
         elsif line =~ regWeightLb
             line = line.gsub(regWeightLb, "")
-            posttext += "* Weight: " + line + "\n"
+            posttext += "* Weight: " + line
             ready = false
         elsif line =~ regLeanMassLb
             line = line.gsub(regLeanMassLb, "")
-            posttext += "* Lean Mass: " + line + "\n"
+            posttext += "* Lean Mass: " + line
             ready = false
         elsif line =~ regFatMassLb
             line = line.gsub(regFatMassLb, "")
-            posttext += "* Fat Mass: " + line + "\n"
+            posttext += "* Fat Mass: " + line
             ready = false
         elsif line =~ regFatPercent
             line = line.gsub(regFatPercent, "")
-            posttext += "* BMI: " + line + "\n"
+            posttext += "* BMI: " + line
             ready = false
         end
 
