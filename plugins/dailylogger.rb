@@ -244,7 +244,7 @@ class DailyLogger < Slogger
     do_instapaper
 
     if @@reading_content != ''
-      content += "### Reading\n\n" + @@reading_content
+      content += "\n### Reading\n\n" + @@reading_content
     end
     @@daily_content += content unless content == ''
   end
@@ -258,7 +258,7 @@ class DailyLogger < Slogger
     do_foursquare
 
     if @@place_content != ''
-      content += "### Places\n\n" + @@place_content
+      content += "\n### Places\n\n" + @@place_content
     end
     @@daily_content += content unless content == ''
   end
@@ -272,7 +272,7 @@ class DailyLogger < Slogger
     do_pinboard
 
     if @@bookmark_content != ''
-      content += "### Bookmarks\n\n" + @@bookmark_content
+      content += "\n### Bookmarks\n\n" + @@bookmark_content
     end
     @@daily_content += content unless content == ''
   end
@@ -287,7 +287,7 @@ class DailyLogger < Slogger
     do_twitter
 
     if @@social_content != ''
-      content += "### Social\n\n" + @@social_content
+      content += "\n### Social\n\n" + @@social_content
     end
     @@daily_content += content unless content == ''
   end
