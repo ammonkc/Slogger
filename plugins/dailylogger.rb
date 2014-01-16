@@ -154,6 +154,9 @@ class DailyLogger < Slogger
   # Log to Dayone
   # ---------------------------
   def do_log
+    do_instapaper
+    do_foursquare
+
     options = {}
     options['content'] = @@daily_content
     DayOne.new.to_dayone(options)
