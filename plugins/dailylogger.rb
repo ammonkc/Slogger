@@ -47,6 +47,7 @@ config = {
   'instapaper_feeds' => [],
   'instapaper_include_content_preview' => true,
   'pinboard_feeds' => [],
+  'pinboard_description' => false,
   'pinboard_save_hashtags' => true,
   'withings_ifttt_input_file' => '',
   'facebook_ifttt_input_file' => '',
@@ -226,8 +227,10 @@ class DailyLogger < Slogger
           if item_date > @timespan
             content = ''
             post_tags = ''
-            content = "\n> " + item.description.gsub(/\n/, "\n> ").strip unless item.description.nil?
-            content = "\n#{content}\n" unless content == ''
+            if config['pinboard_description']
+              content = "\n> " + item.description.gsub(/\n/, "\n> ").strip unless item.description.nil?
+              content = "\n#{content}\n" unless content == ''
+            end
             if config['pinboard_save_hashtags']
               post_tags = "\n" + item.dc_subject.split(' ').map { |tag| "##{tag}" }.join(' ') + "\n" unless item.dc_subject.nil?
             end
