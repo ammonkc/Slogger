@@ -449,7 +449,8 @@ class DailyLogger < Slogger
 
   def get_tweets(user,type='timeline')
     @log.info("Getting Twitter #{type} for #{user}")
-
+    @log.info("oauth token: #{@twitter_config['twitter_oauth_token']}")
+    @log.info("oauth token secret: #{@twitter_config['twitter_oauth_token_secret']}")
     client = Twitter::REST::Client.new do |config|
       config.consumer_key        = "53aMoQiFaQfoUtxyJIkGdw"
       config.consumer_secret     = "Twnh3SnDdtQZkJwJ3p8Tu5rPbL5Gt1I0dEMBBtQ6w"
