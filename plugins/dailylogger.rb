@@ -355,37 +355,13 @@ class DailyLogger < Slogger
     return res.body
   end
 
-  def single_entry(tweet)
-
-    @twitter_config['twitter_tags'] ||= ''
-
-    options = {}
-    options['content'] = "#{tweet[:text]}\n\n-- [@#{tweet[:screen_name]}](https://twitter.com/#{tweet[:screen_name]}/status/#{tweet[:id]})\n\n#{@twitter_config['twitter_tags']}\n"
-    tweet_time = Time.parse(tweet[:date].to_s)
-    options['datestamp'] = tweet_time.utc.iso8601
-
-    sl = DayOne.new
-
-    if tweet[:images] == []
-      sl.to_dayone(options)
-    else
-      tweet[:images].each do |imageurl|
-        options['uuid'] = %x{uuidgen}.gsub(/-/,'').strip
-        path = sl.save_image(imageurl,options['uuid'])
-        sl.store_single_photo(path,options) unless path == false
-      end
-    end
-
-    return true
-  end
-
   def get_tweets(user,type='timeline')
     @log.info("Getting Twitter #{type} for #{user}")
     @log.info("oauth token: #{@twitter_config['twitter_oauth_token']}")
     @log.info("oauth token secret: #{@twitter_config['twitter_oauth_token_secret']}")
-    client = Twitter::Client.new do |config|
-      config.consumer_key        = "53aMoQiFaQfoUtxyJIkGdw"
-      config.consumer_secret     = "Twnh3SnDdtQZkJwJ3p8Tu5rPbL5Gt1I0dEMBBtQ6w"
+    client = Twitter::REST::Client.new do |config|
+      config.consumer_key        = "2ooldNTfjsQluAAsnd8A3w"
+      config.consumer_secret     = "sHyYaCnApDf3HoEMGbPqqoUVIM4lGAVdJoWP0o2uk8"
       config.access_token        = @twitter_config["twitter_oauth_token"]
       config.access_token_secret = @twitter_config["twitter_oauth_token_secret"]
     end
@@ -493,8 +469,8 @@ class DailyLogger < Slogger
 
     if @twitter_config['twitter_oauth_token'] == '' || @twitter_config['twitter_oauth_token_secret'] == ''
       client = TwitterOAuth::Client.new(
-          :consumer_key => "53aMoQiFaQfoUtxyJIkGdw",
-          :consumer_secret => "Twnh3SnDdtQZkJwJ3p8Tu5rPbL5Gt1I0dEMBBtQ6w"
+          :consumer_key => "2ooldNTfjsQluAAsnd8A3w",
+          :consumer_secret => "sHyYaCnApDf3HoEMGbPqqoUVIM4lGAVdJoWP0o2uk8"
       )
 
       request_token = client.authentication_request_token(
