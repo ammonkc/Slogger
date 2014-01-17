@@ -380,19 +380,18 @@ class DailyLogger < Slogger
         :oauth_verifier => code
       )
       if client.authorized?
-        @log.info("oauth_token: " + access_token.params["oauth_token"])
-        @log.info("oauth_token_secret: " + access_token.params["oauth_token_secret"])
-
         @twitter_config['twitter_oauth_token'] = access_token.params["oauth_token"]
         @twitter_config['twitter_oauth_token_secret'] = access_token.params["oauth_token_secret"]
         puts
         log.info("Twitter successfully configured, run Slogger again to continue")
+        log.info("oauth_token: " + access_token.params["oauth_token"])
+        log.info("oauth_token_secret: " + access_token.params["oauth_token_secret"])
         return @twitter_config
       end
     end
-    @twitter_config['save_images'] ||= true
-    @twitter_config['droplr_domain'] ||= 'd.pr'
-    @twitter_config['digest_timeline'] ||= true
+    @twitter_config['twitter_save_images'] ||= true
+    @twitter_config['twitter_droplr_domain'] ||= 'd.pr'
+    @twitter_config['twitter_digest_timeline'] ||= true
 
     @twitter_config['twitter_tags'] ||= '#social #twitter'
     tags = "\n\n#{@twitter_config['twitter_tags']}\n" unless @twitter_config['twitter_tags'] == ''
@@ -404,18 +403,18 @@ class DailyLogger < Slogger
 
       tweets = try { self.get_tweets(user, 'timeline') }
 
-      if @twitter_config['save_favorites']
+      if @twitter_config['twitter_save_favorites']
         favs = try { self.get_tweets(user, 'favorites')}
       else
         favs = []
       end
 
       unless tweets.empty?
-        if @twitter_config['digest_timeline']
+        if @twitter_config['twitter_digest_timeline']
           content = "*@#{user}*\n"
           content << digest_entry(tweets, tags)
           twitter_content += content unless content == ''
-          if @twitter_config['save_images']
+          if @twitter_config['twitter_save_images']
             tweets.select {|t| !t[:images].empty? }.each {|t| self.single_entry(t) }
           end
         end
@@ -454,8 +453,8 @@ class DailyLogger < Slogger
     client = Twitter::REST::Client.new do |config|
       config.consumer_key        = "53aMoQiFaQfoUtxyJIkGdw"
       config.consumer_secret     = "Twnh3SnDdtQZkJwJ3p8Tu5rPbL5Gt1I0dEMBBtQ6w"
-      config.access_token        = @twitter_config["twitter_oauth_token"]
-      config.access_token_secret = @twitter_config["twitter_oauth_token_secret"]
+      config.access_token        = @twitter_config["oauth_token"]
+      config.access_token_secret = @twitter_config["oauth_token_secret"]
     end
 
     case type
@@ -465,7 +464,7 @@ class DailyLogger < Slogger
         tweet_obj = client.favorites(params)
 
       when 'timeline'
-        params = { "count" => 250, "screen_name" => user, "include_entities" => true, "exclude_replies" => @twitter_config['exclude_replies'], "include_rts" => @twitter_config['save_retweets']}
+        params = { "count" => 250, "screen_name" => user, "include_entities" => true, "exclude_replies" => @twitter_config['twitter_exclude_replies'], "include_rts" => @twitter_config['twitter_save_retweets']}
         tweet_obj = client.user_timeline(params)
 
     end
@@ -492,7 +491,7 @@ class DailyLogger < Slogger
           }
         end
         begin
-          if @twitter_config['save_images']
+          if @twitter_config['twitter_save_images']
             tweet_images = []
             unless tweet.media.empty?
               tweet.media.each { |img|
