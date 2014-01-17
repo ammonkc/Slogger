@@ -41,7 +41,7 @@ config = {
     'save_retweets (true/false) determines whether TwitterLogger will include retweets in the posts for the day',
     'droplr_domain: if you have a custom droplr domain, enter it here, otherwise leave it as d.pr ',
     'digest_timeline: if true will create a single entry for all tweets',
-    'oauth_token and oauth_secret should be left blank and will be filled in by the plugin'
+    'twitter_oauth_token and oauth_secret should be left blank and will be filled in by the plugin'
   ],
   'foursquare_feed' => '',
   'instapaper_feeds' => [],
@@ -53,15 +53,15 @@ config = {
   'facebook_ifttt_input_file' => '',
   'facebook_ifttt_star' => false,
   'twitter_users' => [],
-  'save_favorites' => true,
-  'save_images' => true,
-  'save_images_from_favorites' => true,
-  'droplr_domain' => 'd.pr',
-  'oauth_token' => '',
-  'oauth_token_secret' => '',
-  'exclude_replies' => true,
-  'save_retweets' => false,
-  'digest_timeline' => true
+  'twitter_save_favorites' => true,
+  'twitter_save_images' => true,
+  'twitter_save_images_from_favorites' => true,
+  'twitter_droplr_domain' => 'd.pr',
+  'twitter_oauth_token' => '',
+  'twitter_oauth_token_secret' => '',
+  'twitter_exclude_replies' => true,
+  'twitter_save_retweets' => false,
+  'twitter_digest_timeline' => true
 }
 $slog.register_plugin({ 'class' => 'DailyLogger', 'config' => config })
 
@@ -355,7 +355,7 @@ class DailyLogger < Slogger
       return
     end
 
-    if @twitter_config['oauth_token'] == '' || @twitter_config['oauth_token_secret'] == ''
+    if @twitter_config['twitter_oauth_token'] == '' || @twitter_config['twitter_oauth_token_secret'] == ''
       client = TwitterOAuth::Client.new(
           :consumer_key => "53aMoQiFaQfoUtxyJIkGdw",
           :consumer_secret => "Twnh3SnDdtQZkJwJ3p8Tu5rPbL5Gt1I0dEMBBtQ6w"
@@ -380,8 +380,11 @@ class DailyLogger < Slogger
         :oauth_verifier => code
       )
       if client.authorized?
-        @twitter_config['oauth_token'] = access_token.params["oauth_token"]
-        @twitter_config['oauth_token_secret'] = access_token.params["oauth_token_secret"]
+        @log.info("oauth_token: " + access_token.params["oauth_token"])
+        @log.info("oauth_token_secret: " + access_token.params["oauth_token_secret"])
+
+        @twitter_config['twitter_oauth_token'] = access_token.params["oauth_token"]
+        @twitter_config['twitter_oauth_token_secret'] = access_token.params["oauth_token_secret"]
         puts
         log.info("Twitter successfully configured, run Slogger again to continue")
         return @twitter_config
@@ -451,8 +454,8 @@ class DailyLogger < Slogger
     client = Twitter::REST::Client.new do |config|
       config.consumer_key        = "53aMoQiFaQfoUtxyJIkGdw"
       config.consumer_secret     = "Twnh3SnDdtQZkJwJ3p8Tu5rPbL5Gt1I0dEMBBtQ6w"
-      config.access_token        = @twitter_config["oauth_token"]
-      config.access_token_secret = @twitter_config["oauth_token_secret"]
+      config.access_token        = @twitter_config["twitter_oauth_token"]
+      config.access_token_secret = @twitter_config["twitter_oauth_token_secret"]
     end
 
     case type
