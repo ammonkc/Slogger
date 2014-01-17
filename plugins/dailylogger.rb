@@ -24,7 +24,6 @@ config = {
     '***Pinboard***',
     'Logs bookmarks for today from Pinboard.in.',
     'pinboard_feeds is an array of one or more Pinboard RSS feeds',
-    'pinboard_digest true will group all new bookmarks into one post, false will split them into individual posts dated when the bookmark was created',
     '***Withings***',
     'Parses Body Analyzer measurements logged by IFTTT.com',
     'withings_ifttt_input_file is a string pointing to the location of the file created by IFTTT.',
@@ -49,7 +48,6 @@ config = {
   'instapaper_include_content_preview' => true,
   'pinboard_feeds' => [],
   'pinboard_save_hashtags' => true,
-  'pinboard_digest' => true,
   'withings_ifttt_input_file' => '',
   'facebook_ifttt_input_file' => '',
   'facebook_ifttt_star' => false,
@@ -224,28 +222,22 @@ class DailyLogger < Slogger
         rss = RSS::Parser.parse(rss_content, false)
         feed_output = ''
         rss.items.each { |item|
-          feed_output = '' unless config['pinboard_digest']
           item_date = Time.parse(item.date.to_s) + Time.now.gmt_offset
           if item_date > @timespan
             content = ''
             post_tags = ''
-            if config['pinboard_digest']
-              content = "\n        " + item.description.gsub(/\n/, "\n        ").strip unless item.description.nil?
-            else
-              content = "\n> " + item.description.gsub(/\n/, "\n> ").strip unless item.description.nil?
-            end
+            content = "\n> " + item.description.gsub(/\n/, "\n> ").strip unless item.description.nil?
             content = "\n#{content}\n" unless content == ''
             if config['pinboard_save_hashtags']
               post_tags = "\n" + item.dc_subject.split(' ').map { |tag| "##{tag}" }.join(' ') + "\n" unless item.dc_subject.nil?
             end
             post_tags = "\n#{post_tags}\n" unless post_tags == ''
-            feed_output += "#{config['pinboard_digest'] ? '* ' : ''}[#{item.title.gsub(/\n/, ' ').strip}](#{item.link})\n#{content}#{post_tags}"
+            feed_output += "* [#{item.title.gsub(/\n/, ' ').strip}](#{item.link})\n#{content}"
           else
             break
           end
-          output = feed_output unless config['pinboard_digest']
         }
-        output += "### [#{rss.channel.title}](#{rss.channel.link})\n\n" + feed_output + "\n" unless feed_output == ''
+        output += feed_output + "\n" unless feed_output == ''
       rescue Exception => e
         puts "Error getting posts for #{rss_feed}"
         p e
