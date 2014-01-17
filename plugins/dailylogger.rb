@@ -356,6 +356,7 @@ class DailyLogger < Slogger
   end
 
   def get_tweets(user,type='timeline')
+    require 'twitter'
     @log.info("Getting Twitter #{type} for #{user}")
     @log.info("oauth token: #{@twitter_config['twitter_oauth_token']}")
     @log.info("oauth token secret: #{@twitter_config['twitter_oauth_token_secret']}")
