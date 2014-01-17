@@ -379,13 +379,13 @@ class DailyLogger < Slogger
         request_token.secret,
         :oauth_verifier => code
       )
+      @log.info("oauth_token: " + access_token.params["oauth_token"])
+      @log.info("oauth_token_secret: " + access_token.params["oauth_token_secret"])
       if client.authorized?
         @twitter_config['twitter_oauth_token'] = access_token.params["oauth_token"]
         @twitter_config['twitter_oauth_token_secret'] = access_token.params["oauth_token_secret"]
         puts
         log.info("Twitter successfully configured, run Slogger again to continue")
-        log.info("oauth_token: " + access_token.params["oauth_token"])
-        log.info("oauth_token_secret: " + access_token.params["oauth_token_secret"])
         return @twitter_config
       end
     end
