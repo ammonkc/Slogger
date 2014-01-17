@@ -75,6 +75,7 @@ require 'time'
 class DailyLogger < Slogger
   require 'date'
   require 'time'
+  require 'twitter'
 
   @@daily_content = ''
   @@reading_content = ''
