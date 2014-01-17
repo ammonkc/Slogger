@@ -89,7 +89,8 @@ class DailyLogger < Slogger
           # missing some items. Subtracting the gmt_offset fixes this.
           if item_date > (@timespan - item_date.gmt_offset)
             content = item.description.gsub(/\n/,"\n    ") unless item.description == ''
-            feed_output += "* #{rss.channel.title} - [#{item.title}](#{item.link})\n"
+            feedTitle = rss.channel.title.gsub(/Instapaper: /, "")
+            feed_output += "* #{feedTitle} - [#{item.title}](#{item.link})\n"
             feed_output += "\n     #{content}\n" if config['instapaper_include_content_preview'] == true
           else
             # The archive orders posts inconsistenly so older items can
@@ -99,7 +100,7 @@ class DailyLogger < Slogger
             end
           end
         }
-        output += feed_output + "\n" unless feed_output == ''
+        output += feed_output unless feed_output == ''
       rescue Exception => e
         raise "Error getting posts for #{rss_feed}"
         p e
