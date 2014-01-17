@@ -453,8 +453,8 @@ class DailyLogger < Slogger
     client = Twitter::REST::Client.new do |config|
       config.consumer_key        = "53aMoQiFaQfoUtxyJIkGdw"
       config.consumer_secret     = "Twnh3SnDdtQZkJwJ3p8Tu5rPbL5Gt1I0dEMBBtQ6w"
-      config.access_token        = @twitter_config["oauth_token"]
-      config.access_token_secret = @twitter_config["oauth_token_secret"]
+      config.access_token        = @twitter_config["twitter_oauth_token"]
+      config.access_token_secret = @twitter_config["twitter_oauth_token_secret"]
     end
 
     case type
