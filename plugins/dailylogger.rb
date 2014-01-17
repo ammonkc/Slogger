@@ -75,7 +75,6 @@ require 'time'
 class DailyLogger < Slogger
   require 'date'
   require 'time'
-  require 'twitter'
 
   @@daily_content = ''
   @@reading_content = ''
@@ -384,7 +383,7 @@ class DailyLogger < Slogger
     @log.info("Getting Twitter #{type} for #{user}")
     @log.info("oauth token: #{@twitter_config['twitter_oauth_token']}")
     @log.info("oauth token secret: #{@twitter_config['twitter_oauth_token_secret']}")
-    client = Twitter::REST::Client.new do |config|
+    client = Twitter::Client.new do |config|
       config.consumer_key        = "53aMoQiFaQfoUtxyJIkGdw"
       config.consumer_secret     = "Twnh3SnDdtQZkJwJ3p8Tu5rPbL5Gt1I0dEMBBtQ6w"
       config.access_token        = @twitter_config["twitter_oauth_token"]
