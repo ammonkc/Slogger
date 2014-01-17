@@ -343,98 +343,6 @@ class DailyLogger < Slogger
   # ---------------------------
   # Twitter
   # ---------------------------
-  def do_twitter
-    if @config.key?(self.class.name)
-        @twitter_config = @config[self.class.name]
-        if !@twitter_config.key?('twitter_users') || @twitter_config['twitter_users'] == []
-          @log.warn("Twitter users have not been configured, please edit your slogger_config file.")
-          return
-        end
-    else
-      @log.warn("Twitter users have not been configured, please edit your slogger_config file.")
-      return
-    end
-
-    if @twitter_config['twitter_oauth_token'] == '' || @twitter_config['twitter_oauth_token_secret'] == ''
-      client = TwitterOAuth::Client.new(
-          :consumer_key => "53aMoQiFaQfoUtxyJIkGdw",
-          :consumer_secret => "Twnh3SnDdtQZkJwJ3p8Tu5rPbL5Gt1I0dEMBBtQ6w"
-      )
-
-      request_token = client.authentication_request_token(
-        :oauth_callback => 'oob'
-      )
-      @log.info("Twitter requires configuration, please run from the command line and follow the prompts")
-      puts
-      puts "------------- Twitter Configuration --------------"
-      puts "Slogger will now open an authorization page in your default web browser. Copy the code you receive and return here."
-      print "Press Enter to continue..."
-      gets
-      %x{open "#{request_token.authorize_url}"}
-      print "Paste the code you received here: "
-      code = gets.strip
-
-      access_token = client.authorize(
-        request_token.token,
-        request_token.secret,
-        :oauth_verifier => code
-      )
-      @log.info("oauth_token: " + access_token.params["oauth_token"])
-      @log.info("oauth_token_secret: " + access_token.params["oauth_token_secret"])
-      if client.authorized?
-        @twitter_config['twitter_oauth_token'] = access_token.params["oauth_token"]
-        @twitter_config['twitter_oauth_token_secret'] = access_token.params["oauth_token_secret"]
-        puts
-        log.info("Twitter successfully configured, run Slogger again to continue")
-        return @twitter_config
-      end
-    end
-    @twitter_config['twitter_save_images'] ||= true
-    @twitter_config['twitter_droplr_domain'] ||= 'd.pr'
-    @twitter_config['twitter_digest_timeline'] ||= true
-
-    @twitter_config['twitter_tags'] ||= '#social #twitter'
-    tags = "\n\n#{@twitter_config['twitter_tags']}\n" unless @twitter_config['twitter_tags'] == ''
-
-    twitter_content = ''
-    entrytext = ''
-
-    @twitter_config['twitter_users'].each do |user|
-
-      tweets = try { self.get_tweets(user, 'timeline') }
-
-      if @twitter_config['twitter_save_favorites']
-        favs = try { self.get_tweets(user, 'favorites')}
-      else
-        favs = []
-      end
-
-      unless tweets.empty?
-        if @twitter_config['twitter_digest_timeline']
-          content = "*@#{user}*\n"
-          content << digest_entry(tweets, tags)
-          twitter_content += content unless content == ''
-          if @twitter_config['twitter_save_images']
-            tweets.select {|t| !t[:images].empty? }.each {|t| self.single_entry(t) }
-          end
-        end
-
-      end
-      unless favs.empty?
-        content = "*@#{user}'s* Favorite Tweets\n"
-        content << digest_entry(favs, tags)
-        twitter_content += content unless content == ''
-      end
-    end
-
-    if twitter_content != ''
-      entrytext = "##### Twitter\n" + twitter_content + "\n"
-    end
-    @@social_content += entrytext unless entrytext == ''
-
-    return @twitter_config
-  end
-
   def get_body(target, depth = 0)
 
     final_url = RedirectFollower.new(target).resolve
@@ -445,6 +353,30 @@ class DailyLogger < Slogger
     res = Net::HTTP.start(host, port) {|http| http.request(req) }
 
     return res.body
+  end
+
+  def single_entry(tweet)
+
+    @twitter_config['twitter_tags'] ||= ''
+
+    options = {}
+    options['content'] = "#{tweet[:text]}\n\n-- [@#{tweet[:screen_name]}](https://twitter.com/#{tweet[:screen_name]}/status/#{tweet[:id]})\n\n#{@twitter_config['twitter_tags']}\n"
+    tweet_time = Time.parse(tweet[:date].to_s)
+    options['datestamp'] = tweet_time.utc.iso8601
+
+    sl = DayOne.new
+
+    if tweet[:images] == []
+      sl.to_dayone(options)
+    else
+      tweet[:images].each do |imageurl|
+        options['uuid'] = %x{uuidgen}.gsub(/-/,'').strip
+        path = sl.save_image(imageurl,options['uuid'])
+        sl.store_single_photo(path,options) unless path == false
+      end
+    end
+
+    return true
   end
 
   def get_tweets(user,type='timeline')
@@ -545,6 +477,98 @@ class DailyLogger < Slogger
       return []
     end
 
+  end
+
+  def do_twitter
+    if @config.key?(self.class.name)
+        @twitter_config = @config[self.class.name]
+        if !@twitter_config.key?('twitter_users') || @twitter_config['twitter_users'] == []
+          @log.warn("Twitter users have not been configured, please edit your slogger_config file.")
+          return
+        end
+    else
+      @log.warn("Twitter users have not been configured, please edit your slogger_config file.")
+      return
+    end
+
+    if @twitter_config['twitter_oauth_token'] == '' || @twitter_config['twitter_oauth_token_secret'] == ''
+      client = TwitterOAuth::Client.new(
+          :consumer_key => "53aMoQiFaQfoUtxyJIkGdw",
+          :consumer_secret => "Twnh3SnDdtQZkJwJ3p8Tu5rPbL5Gt1I0dEMBBtQ6w"
+      )
+
+      request_token = client.authentication_request_token(
+        :oauth_callback => 'oob'
+      )
+      @log.info("Twitter requires configuration, please run from the command line and follow the prompts")
+      puts
+      puts "------------- Twitter Configuration --------------"
+      puts "Slogger will now open an authorization page in your default web browser. Copy the code you receive and return here."
+      print "Press Enter to continue..."
+      gets
+      %x{open "#{request_token.authorize_url}"}
+      print "Paste the code you received here: "
+      code = gets.strip
+
+      access_token = client.authorize(
+        request_token.token,
+        request_token.secret,
+        :oauth_verifier => code
+      )
+      if client.authorized?
+        @twitter_config['twitter_oauth_token'] = access_token.params["oauth_token"]
+        @twitter_config['twitter_oauth_token_secret'] = access_token.params["oauth_token_secret"]
+        puts
+        log.info("Twitter successfully configured, run Slogger again to continue")
+        @log.info("oauth_token: " + access_token.params["oauth_token"])
+        @log.info("oauth_token_secret: " + access_token.params["oauth_token_secret"])
+        return @twitter_config
+      end
+    end
+    @twitter_config['twitter_save_images'] ||= true
+    @twitter_config['twitter_droplr_domain'] ||= 'd.pr'
+    @twitter_config['twitter_digest_timeline'] ||= true
+
+    @twitter_config['twitter_tags'] ||= '#social #twitter'
+    tags = "\n\n#{@twitter_config['twitter_tags']}\n" unless @twitter_config['twitter_tags'] == ''
+
+    twitter_content = ''
+    entrytext = ''
+
+    @twitter_config['twitter_users'].each do |user|
+
+      tweets = try { self.get_tweets(user, 'timeline') }
+
+      if @twitter_config['twitter_save_favorites']
+        favs = try { self.get_tweets(user, 'favorites')}
+      else
+        favs = []
+      end
+
+      unless tweets.empty?
+        if @twitter_config['twitter_digest_timeline']
+          content = "*@#{user}*\n"
+          content << digest_entry(tweets, tags)
+          twitter_content += content unless content == ''
+          if @twitter_config['twitter_save_images']
+            tweets.select {|t| !t[:images].empty? }.each {|t| self.single_entry(t) }
+          end
+        end
+
+      end
+      unless favs.empty?
+        content = "*@#{user}'s* Favorite Tweets\n"
+        content << digest_entry(favs, tags)
+        twitter_content += content unless content == ''
+      end
+    end
+
+    if twitter_content != ''
+      entrytext = "##### Twitter\n" + twitter_content + "\n"
+    end
+    @@social_content += entrytext unless entrytext == ''
+
+    return @twitter_config
   end
 
   def digest_entry(tweets, tags)
