@@ -229,7 +229,7 @@ class DailyLogger < Slogger
             post_tags = ''
             if config['pinboard_description']
               content = "   > " + item.description.gsub(/\n/, "   \n> ").strip unless item.description.nil?
-              content = "#{content}\n" unless content == ''
+              content = "\n#{content}\n" unless content == ''
             end
             if config['pinboard_save_hashtags']
               post_tags = "\n" + item.dc_subject.split(' ').map { |tag| "##{tag}" }.join(' ') + "\n" unless item.dc_subject.nil?
