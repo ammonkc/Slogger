@@ -244,9 +244,6 @@ class DailyLogger < Slogger
             break
           end
           output = feed_output unless config['pinboard_digest']
-          unless output == '' || config['pinboard_digest']
-            @@bookmark_content = "##### Pinboard\n#{output}"
-          end
         }
         output += "### [#{rss.channel.title}](#{rss.channel.link})\n\n" + feed_output + "\n" unless feed_output == ''
       rescue Exception => e
@@ -255,7 +252,7 @@ class DailyLogger < Slogger
         return ''
       end
     end
-    unless output == '' || !config['pinboard_digest']
+    unless output == ''
       @@bookmark_content = "##### Pinboard\n#{output}"
     end
   end
