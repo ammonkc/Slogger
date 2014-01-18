@@ -955,7 +955,7 @@ class DailyLogger < Slogger
 
     do_github
 
-    if @@coding_content != ''
+    if @@code_content != ''
       content += "### Code\n\n" + @@code_content + "\n\n"
     end
     @@daily_content += content unless content == ''
