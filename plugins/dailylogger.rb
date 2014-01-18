@@ -46,7 +46,10 @@ config = {
     'Logs songs scrobbled for time period.',
     'lastfm_user is your Last.fm username.',
     'lastfm_feeds is an array that determines whether it grabs recent tracks, loved tracks, or both',
-    'lastfm_include_timestamps (true/false) will add a timestamp prefix based on @time_format to each song'
+    'lastfm_include_timestamps (true/false) will add a timestamp prefix based on @time_format to each song',
+    '***Github***',
+    'Logs daily Github activity for the specified user',
+    'github_user should be your Github username'
   ],
   'foursquare_feed' => '',
   'instapaper_feeds' => [],
@@ -69,7 +72,8 @@ config = {
   'twitter_digest_timeline' => true,
   'lastfm_include_timestamps' => false,
   'lastfm_user' => '',
-  'lastfm_feeds' => ['recent', 'loved']
+  'lastfm_feeds' => ['recent', 'loved'],
+  'github_user' => ''
 }
 $slog.register_plugin({ 'class' => 'DailyLogger', 'config' => config })
 
@@ -91,6 +95,7 @@ class DailyLogger < Slogger
   @@social_content = ''
   @@fitness_content = ''
   @@music_content = ''
+  @@code_content = ''
 
   # ---------------------------
   # Instapaper
@@ -785,6 +790,79 @@ class DailyLogger < Slogger
   end
 
   # ---------------------------
+  # Github
+  # ---------------------------
+  def do_github
+    if @config.key?(self.class.name)
+        config = @config[self.class.name]
+        if !config.key?('github_user') || config['github_user'] == ''
+          @log.warn("Github user has not been configured or is invalid, please edit your slogger_config file.")
+          return
+        end
+    else
+      @log.warn("Github user has not been configured, please edit your slogger_config file.")
+      return
+    end
+    @log.info("Logging Github activity for #{config['github_user']}")
+    begin
+      url = URI.parse "https://github.com/#{config['github_user'].strip}.json"
+
+      http = Net::HTTP.new url.host, url.port
+      http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      http.use_ssl = true
+
+      res = nil
+
+      http.start do |agent|
+        res = agent.get(url.path).read_body
+      end
+    rescue Exception => e
+      @log.error("ERROR retrieving Github url: #{url}")
+      # p e
+    end
+
+    return false if res.nil?
+    json = JSON.parse(res)
+
+    output = ""
+    entrytext = ""
+
+    json.each {|action|
+      date = Time.parse(action['created_at'])
+      if date > @timespan
+        case action['type']
+          when "PushEvent"
+            if !action["repository"]
+              action['repository'] = {"name" => "unknown repository"}
+            end
+            output += "* Pushed to branch *#{action['payload']['ref'].gsub(/refs\/heads\//,'')}* of [#{action['repository']['name']}](#{action['url']})\n"
+            action['payload']['shas'].each do |sha|
+              output += "    * #{sha[2].gsub(/\n+/," ")}\n" unless sha.length < 3
+            end
+          when "GistEvent"
+            output += "* Created gist [#{action['payload']['name']}](#{action['payload']['url']})\n"
+            output += "    * #{action['payload']['desc'].gsub(/\n/," ")}\n" unless action['payload']['desc'].nil?
+          when "WatchEvent"
+            if action['payload']['action'] == "started"
+              output += "* Started watching [#{action['repository']['owner']}/#{action['repository']['name']}](#{action['repository']['url']})\n"
+              output += "    * #{action['repository']['description'].gsub(/\n/," ")}\n" unless action['repository']['description'].nil?
+            end
+        end
+      else
+        break
+      end
+    }
+
+    return false if output.strip == ""
+    if output != ''
+      entrytext = "##### Github Activity\n" + output
+    end
+    @@code_content += entrytext unless entrytext == ''
+  end
+
+
+
+  # ---------------------------
   # Reading
   # ---------------------------
   def do_reading
@@ -870,6 +948,20 @@ class DailyLogger < Slogger
   end
 
   # ---------------------------
+  # Coding
+  # ---------------------------
+  def do_code
+    content = ''
+
+    do_code
+
+    if @@coding_content != ''
+      content += "### Code\n\n" + @@code_content + "\n\n"
+    end
+    @@daily_content += content unless content == ''
+  end
+
+  # ---------------------------
   # Log to Dayone
   # ---------------------------
   def do_log
@@ -879,6 +971,7 @@ class DailyLogger < Slogger
     do_music
     do_reading
     do_bookmarks
+    do_code
 
     options = {}
     options['content'] = @@daily_content
