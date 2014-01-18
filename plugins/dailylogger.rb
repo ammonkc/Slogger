@@ -871,7 +871,7 @@ class DailyLogger < Slogger
     do_instapaper
 
     if @@reading_content != ''
-      content += "### Reading\n\n" + @@reading_content + "\n\n"
+      content += "### Reading\n" + @@reading_content + "\n\n"
     end
     @@daily_content += content unless content == ''
   end
@@ -885,7 +885,7 @@ class DailyLogger < Slogger
     do_foursquare
 
     if @@place_content != ''
-      content += "### Places\n\n" + @@place_content + "\n\n"
+      content += "### Places\n" + @@place_content + "\n\n"
     end
     @@daily_content += content unless content == ''
   end
@@ -899,7 +899,7 @@ class DailyLogger < Slogger
     do_lastfm
 
     if @@music_content != ''
-      content += "### Music\n\n" + @@music_content + "\n\n"
+      content += "### Music\n" + @@music_content + "\n\n"
     end
     @@daily_content += content unless content == ''
   end
@@ -913,7 +913,7 @@ class DailyLogger < Slogger
     do_pinboard
 
     if @@bookmark_content != ''
-      content += "### Bookmarks\n\n" + @@bookmark_content + "\n\n"
+      content += "### Bookmarks\n" + @@bookmark_content + "\n\n"
     end
     @@daily_content += content unless content == ''
   end
@@ -928,7 +928,7 @@ class DailyLogger < Slogger
     # do_twitter
 
     if @@social_content != ''
-      content += "### Social\n\n" + @@social_content + "\n\n"
+      content += "### Social\n" + @@social_content + "\n\n"
     end
     @@daily_content += content unless content == ''
   end
@@ -942,7 +942,7 @@ class DailyLogger < Slogger
     do_withings
 
     if @@fitness_content != ''
-      content += "### Fitness\n\n" + @@fitness_content + "\n\n"
+      content += "### Fitness\n" + @@fitness_content + "\n\n"
     end
     @@daily_content += content unless content == ''
   end
@@ -956,7 +956,7 @@ class DailyLogger < Slogger
     do_github
 
     if @@code_content != ''
-      content += "### Code\n\n" + @@code_content + "\n\n"
+      content += "### Code\n" + @@code_content + "\n\n"
     end
     @@daily_content += content unless content == ''
   end
