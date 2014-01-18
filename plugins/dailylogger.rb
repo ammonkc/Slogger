@@ -987,7 +987,7 @@ class DailyLogger < Slogger
     content = ''
 
     do_facebook
-    # do_twitter
+    do_twitter
 
     if @@social_content != ''
       content += "### Social\n" + @@social_content + "\n"
