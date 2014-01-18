@@ -339,7 +339,7 @@ class DailyLogger < Slogger
 
       if ready
         if posttext != ''
-        entrytext += "##### Facebook\n" + posttext + "\n"
+          entrytext += "##### Facebook\n" + posttext
         end
         @@social_content += entrytext unless entrytext == ''
 
@@ -663,7 +663,7 @@ class DailyLogger < Slogger
 
         if ready
           if posttext != ''
-            entrytext = "##### Withings Body Analyzer\n" + posttext + "\n"
+            entrytext = "##### Withings Body Analyzer\n" + posttext
           end
           @@fitness_content += entrytext unless entrytext == ''
 
@@ -762,7 +762,7 @@ class DailyLogger < Slogger
       }
 
       if content != ''
-        entrytext = "##### Last.fm\n" + content + "\n"
+        entrytext = "##### Last.fm\n" + content
       end
       @@music_content = entrytext unless entrytext == ''
     end
@@ -793,7 +793,7 @@ class DailyLogger < Slogger
     do_instapaper
 
     if @@reading_content != ''
-      content += "### Reading\n\n" + @@reading_content + "\n"
+      content += "### Reading\n\n" + @@reading_content + "\n\n"
     end
     @@daily_content += content unless content == ''
   end
@@ -807,7 +807,7 @@ class DailyLogger < Slogger
     do_foursquare
 
     if @@place_content != ''
-      content += "### Places\n\n" + @@place_content + "\n"
+      content += "### Places\n\n" + @@place_content + "\n\n"
     end
     @@daily_content += content unless content == ''
   end
@@ -821,7 +821,7 @@ class DailyLogger < Slogger
     do_lastfm
 
     if @@music_content != ''
-      content += "### Music\n\n" + @@music_content + "\n"
+      content += "### Music\n\n" + @@music_content + "\n\n"
     end
     @@daily_content += content unless content == ''
   end
@@ -835,7 +835,7 @@ class DailyLogger < Slogger
     do_pinboard
 
     if @@bookmark_content != ''
-      content += "### Bookmarks\n\n" + @@bookmark_content + "\n"
+      content += "### Bookmarks\n\n" + @@bookmark_content + "\n\n"
     end
     @@daily_content += content unless content == ''
   end
@@ -850,7 +850,7 @@ class DailyLogger < Slogger
     # do_twitter
 
     if @@social_content != ''
-      content += "### Social\n\n" + @@social_content + "\n"
+      content += "### Social\n\n" + @@social_content + "\n\n"
     end
     @@daily_content += content unless content == ''
   end
@@ -864,7 +864,7 @@ class DailyLogger < Slogger
     do_withings
 
     if @@fitness_content != ''
-      content += "### Fitness\n\n" + @@fitness_content + "\n"
+      content += "### Fitness\n\n" + @@fitness_content + "\n\n"
     end
     @@daily_content += content unless content == ''
   end
