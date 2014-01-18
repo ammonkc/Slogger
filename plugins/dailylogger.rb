@@ -903,7 +903,6 @@ class DailyLogger < Slogger
     json = JSON.parse(res)
 
     output = ""
-    entrytext = ""
 
     json.each {|gist|
       date = Time.parse(gist['created_at'])
