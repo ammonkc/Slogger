@@ -156,7 +156,7 @@ class DailyLogger < Slogger
       end
     end
     unless output.strip == ''
-      @@reading_content += "##### Instapaper\n#{output}"
+      @@reading_content += "##### Instapaper\n" + output + "\n"
     end
   end
 
@@ -206,7 +206,7 @@ class DailyLogger < Slogger
       content += "* #{checkinDate} - [#{item.title}](#{item.link})\n"
     }
     if content != ''
-      entrytext = "##### Foursquare\n" + content
+      entrytext = "##### Foursquare\n" + content + "\n"
     end
     @@place_content += entrytext unless entrytext == ''
   end
@@ -266,7 +266,7 @@ class DailyLogger < Slogger
       end
     end
     unless output == ''
-      @@bookmark_content = "##### Pinboard\n#{output}"
+      @@bookmark_content = "##### Pinboard\n" + output + "\n"
     end
   end
 
@@ -348,7 +348,7 @@ class DailyLogger < Slogger
 
       if ready
         if posttext != ''
-          entrytext += "##### Facebook\n" + posttext
+          entrytext += "##### Facebook\n" + posttext + "\n"
         end
         @@social_content += entrytext unless entrytext == ''
 
@@ -672,7 +672,7 @@ class DailyLogger < Slogger
 
         if ready
           if posttext != ''
-            entrytext = "##### Withings Body Analyzer\n" + posttext
+            entrytext = "##### Withings Body Analyzer\n" + posttext + "\n"
           end
           @@fitness_content += entrytext unless entrytext == ''
 
@@ -771,7 +771,7 @@ class DailyLogger < Slogger
       }
 
       if content != ''
-        entrytext = "##### Last.fm\n" + content
+        entrytext = "##### Last.fm\n" + content + "\n"
       end
       @@music_content = entrytext unless entrytext == ''
     end
@@ -859,7 +859,7 @@ class DailyLogger < Slogger
 
     return false if output.strip == ""
     if output != ''
-      entrytext = "##### Github Activity\n" + output
+      entrytext = "##### Github Activity\n" + output + "\n"
     end
     @@code_content += entrytext unless entrytext == ''
   end
@@ -917,7 +917,7 @@ class DailyLogger < Slogger
     return false if output.strip == ""
     entry = "## Gists for #{Time.now.strftime(@date_format)}:\n\n#{output}\n#{config['gist_tags']}"
     if output != ''
-      entrytext = "##### Gists\n" + output
+      entrytext = "##### Gists\n" + output + "\n"
     end
     @@code_content += entrytext unless entrytext == ''
   end
