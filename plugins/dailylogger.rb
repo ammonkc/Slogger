@@ -473,7 +473,7 @@ class DailyLogger < Slogger
 
   end
 
-  def do_log
+  def do_twitter
     if @config.key?(self.class.name)
         @twitter_config = @config[self.class.name]
         if !@twitter_config.key?('twitter_users') || @twitter_config['twitter_users'] == []
@@ -561,19 +561,6 @@ class DailyLogger < Slogger
       entrytext = "##### Twitter\n" + twitter_content + "\n"
     end
     @@social_content += entrytext unless entrytext == ''
-
-    do_social
-    do_fitness
-    do_places
-    do_music
-    do_reading
-    do_bookmarks
-    do_code
-
-    options = {}
-    options['content'] = @@daily_content
-    options['tags'] = ['daily logs']
-    DayOne.new.to_dayone(options)
 
     return @twitter_config
   end
@@ -1040,19 +1027,18 @@ class DailyLogger < Slogger
   # ---------------------------
   # Log to Dayone
   # ---------------------------
-  # def do_log
-  #   do_social
-  #   do_fitness
-  #   do_places
-  #   do_music
-  #   do_reading
-  #   do_bookmarks
-  #   do_code
+  def do_log
+    do_social
+    do_fitness
+    do_places
+    do_music
+    do_reading
+    do_bookmarks
+    do_code
 
-  #   tags = ['daily logs']
-  #   options = {}
-  #   options['content'] = @@daily_content
-  #   options['tags'] = tags
-  #   DayOne.new.to_dayone(options)
-  # end
+    options = {}
+    options['content'] = @@daily_content
+    options['tags'] = ['daily logs']
+    DayOne.new.to_dayone(options)
+  end
 end
