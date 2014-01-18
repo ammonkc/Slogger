@@ -473,7 +473,7 @@ class DailyLogger < Slogger
 
   end
 
-  def log_twitter
+  def do_log
     if @config.key?(self.class.name)
         @twitter_config = @config[self.class.name]
         if !@twitter_config.key?('twitter_users') || @twitter_config['twitter_users'] == []
@@ -514,7 +514,6 @@ class DailyLogger < Slogger
         @twitter_config['twitter_oauth_token_secret'] = access_token.params["oauth_token_secret"]
         puts
         log.info("Twitter successfully configured, run Slogger again to continue")
-        @log.info("twitter username: " + @twitter_config['twitter_users'])
         @log.info("oauth_token: " + access_token.params["oauth_token"])
         @log.info("oauth_token_secret: " + access_token.params["oauth_token_secret"])
         return @twitter_config
@@ -562,6 +561,19 @@ class DailyLogger < Slogger
       entrytext = "##### Twitter\n" + twitter_content + "\n"
     end
     @@social_content += entrytext unless entrytext == ''
+
+    do_social
+    do_fitness
+    do_places
+    do_music
+    do_reading
+    do_bookmarks
+    do_code
+
+    options = {}
+    options['content'] = @@daily_content
+    options['tags'] = ['daily logs']
+    DayOne.new.to_dayone(options)
 
     return @twitter_config
   end
@@ -988,7 +1000,7 @@ class DailyLogger < Slogger
     content = ''
 
     do_facebook
-    log_twitter
+    # do_twitter
 
     if @@social_content != ''
       content += "### Social\n" + @@social_content + "\n"
@@ -1028,19 +1040,19 @@ class DailyLogger < Slogger
   # ---------------------------
   # Log to Dayone
   # ---------------------------
-  def do_log
-    do_social
-    do_fitness
-    do_places
-    do_music
-    do_reading
-    do_bookmarks
-    do_code
+  # def do_log
+  #   do_social
+  #   do_fitness
+  #   do_places
+  #   do_music
+  #   do_reading
+  #   do_bookmarks
+  #   do_code
 
-    tags = ['daily logs']
-    options = {}
-    options['content'] = @@daily_content
-    options['tags'] = tags
-    DayOne.new.to_dayone(options)
-  end
+  #   tags = ['daily logs']
+  #   options = {}
+  #   options['content'] = @@daily_content
+  #   options['tags'] = tags
+  #   DayOne.new.to_dayone(options)
+  # end
 end
