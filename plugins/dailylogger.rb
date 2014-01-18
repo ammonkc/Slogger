@@ -953,7 +953,7 @@ class DailyLogger < Slogger
   def do_code
     content = ''
 
-    do_code
+    do_github
 
     if @@coding_content != ''
       content += "### Code\n\n" + @@code_content + "\n\n"
