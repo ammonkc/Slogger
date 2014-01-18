@@ -1036,8 +1036,10 @@ class DailyLogger < Slogger
     do_bookmarks
     do_code
 
+    tags = ['daily logs']
     options = {}
     options['content'] = @@daily_content
+    options['tags'] = tags
     DayOne.new.to_dayone(options)
   end
 end
