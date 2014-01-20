@@ -1138,7 +1138,7 @@ class DailyLogger < Slogger
       end
     }
     unless output == ''
-      @@reading_content += "##### Pocket\n\n#{output}"
+      @@reading_content += "##### Pocket\n\n#{output}\n"
     end
   end
 
