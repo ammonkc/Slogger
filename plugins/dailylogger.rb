@@ -52,7 +52,12 @@ config = {
     'github_user should be your Github username',
     '***Gist***',
     'Logs daily Gists for the specified user',
-    'gist_user should be your Github username'
+    'gist_user should be your Github username',
+    '***SoundCloud***',
+    'Logs SoundCloud uploads as a digest',
+    'soundcloud_id is a string of numbers representing your user ID',
+    'Dashboard -> Tracks, view page source and search for "trackOwnerId"',
+    'soundcloud_starred is true or false, determines whether SoundCloud uploads are starred entries'
   ],
   'foursquare_feed' => '',
   'instapaper_feeds' => [],
@@ -77,7 +82,9 @@ config = {
   'lastfm_user' => '',
   'lastfm_feeds' => ['recent', 'loved'],
   'github_user' => '',
-  'gist_user' => ''
+  'gist_user' => '',
+  'soundcloud_id' => '',
+  'soundcloud_starred' => false
 }
 $slog.register_plugin({ 'class' => 'DailyLogger', 'config' => config })
 
@@ -922,6 +929,81 @@ class DailyLogger < Slogger
     @@code_content += entrytext unless entrytext == ''
   end
 
+  # ---------------------------
+  # Reading
+  # ---------------------------
+  def do_soundcloud
+    if @config.key?(self.class.name)
+      @scconfig = @config[self.class.name]
+      if !@scconfig.key?('soundcloud_id') || @scconfig['soundcloud_id'] == [] || @scconfig['soundcloud_id'].nil?
+        @log.warn("SoundCloud logging has not been configured or a feed is invalid, please edit your slogger_config file.")
+        return
+      else
+        user = @scconfig['soundcloud_id']
+      end
+    else
+      @log.warn("SoundCloud logging not been configured or a feed is invalid, please edit your slogger_config file.")
+      return
+    end
+    @log.info("Logging SoundCloud uploads")
+
+    retries = 0
+    success = false
+
+    until success
+      if parse_soundcloud_feed("http://api.soundcloud.com/users/#{user}/tracks?limit=25&offset=0&linked_partitioning=1&secret_token=&client_id=ab472b80bdf8389dd6f607a10abfe33b&format=xml")
+        success = true
+      else
+        break if $options[:max_retries] == retries
+        retries += 1
+        @log.error("Error parsing SoundCloud feed for user #{user}, retrying (#{retries}/#{$options[:max_retries]})")
+        sleep 2
+      end
+    end
+
+    unless success
+      @log.fatal("Could not parse SoundCloud feed for user #{user}")
+    end
+
+  end
+
+  def parse_soundcloud_feed(rss_feed)
+    starred = @scconfig['soundcloud_starred'] || false
+
+    begin
+      rss_content = ""
+
+      feed_download_response = Net::HTTP.get_response(URI.parse(rss_feed));
+      xml_data = feed_download_response.body;
+
+      doc = REXML::Document.new(xml_data);
+      # Useful SoundCloud XML elements
+      # created-at
+      # permalink-url
+      # artwork-url
+      # title
+      # description
+      content = ''
+      doc.root.each_element('//track') { |item|
+        item_date = Time.parse(item.elements['created-at'].text)
+        if item_date > @timespan
+          content += "* [#{item.elements['title'].text}](#{item.elements['permalink-url'].text})\n" rescue ''
+          desc = item.elements['description'].text
+          content += "\n     #{desc}\n" unless desc.nil? or desc == ''
+        else
+          break
+        end
+      }
+      unless content == ''
+        @@music_content = "##### SoundCloud\n\n#{content}\n"
+      end
+    rescue Exception => e
+      p e
+      return false
+    end
+    return true
+  end
+
 
 
   # ---------------------------
@@ -959,6 +1041,7 @@ class DailyLogger < Slogger
     content = ''
 
     do_lastfm
+    do_soundcloud
 
     if @@music_content != ''
       content += "### Music\n" + @@music_content + "\n"
