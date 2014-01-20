@@ -57,7 +57,14 @@ config = {
     'Logs SoundCloud uploads as a digest',
     'soundcloud_id is a string of numbers representing your user ID',
     'Dashboard -> Tracks, view page source and search for "trackOwnerId"',
-    'soundcloud_starred is true or false, determines whether SoundCloud uploads are starred entries'
+    'soundcloud_starred is true or false, determines whether SoundCloud uploads are starred entries',
+    '***Readability***',
+    'Logs today\'s posts to Readability.',
+    'read_username is a string with your Readability username',
+    'read_passwd is a string with your Readability password',
+    'read_key is a string with your Readability API key',
+    'read_secret is a string with your Readability API secret',
+    'read_favorites_only is a boolean to only return favorites'
   ],
   'foursquare_feed' => '',
   'instapaper_feeds' => [],
@@ -84,7 +91,12 @@ config = {
   'github_user' => '',
   'gist_user' => '',
   'soundcloud_id' => '',
-  'soundcloud_starred' => false
+  'soundcloud_starred' => false,
+  'read_username' => nil,
+  'read_passwd' => nil,
+  'read_key' => nil,
+  'read_secret' => nil,
+  'read_favorites_only' => false
 }
 $slog.register_plugin({ 'class' => 'DailyLogger', 'config' => config })
 
@@ -94,6 +106,8 @@ require 'twitter'
 require 'twitter_oauth'
 require 'date'
 require 'time'
+require 'rubygems'
+require 'oauth'
 
 class DailyLogger < Slogger
   require 'date'
@@ -273,7 +287,7 @@ class DailyLogger < Slogger
       end
     end
     unless output == ''
-      @@bookmark_content = "##### Pinboard\n" + output + "\n"
+      @@bookmark_content += "##### Pinboard\n" + output + "\n"
     end
   end
 
@@ -780,7 +794,7 @@ class DailyLogger < Slogger
       if content != ''
         entrytext = "##### Last.fm\n" + content + "\n"
       end
-      @@music_content = entrytext unless entrytext == ''
+      @@music_content += entrytext unless entrytext == ''
     end
   end
 
@@ -930,7 +944,7 @@ class DailyLogger < Slogger
   end
 
   # ---------------------------
-  # Reading
+  # SoundCloud
   # ---------------------------
   def do_soundcloud
     if @config.key?(self.class.name)
@@ -995,7 +1009,7 @@ class DailyLogger < Slogger
         end
       }
       unless content == ''
-        @@music_content = "##### SoundCloud\n\n#{content}\n"
+        @@music_content += "##### SoundCloud\n\n#{content}\n"
       end
     rescue Exception => e
       p e
@@ -1004,7 +1018,64 @@ class DailyLogger < Slogger
     return true
   end
 
+  # ---------------------------
+  # Reading
+  # ---------------------------
+  def do_readability
+    if @config.key?(self.class.name)
+      config = @config[self.class.name]
+      if !config.key?('read_username') || config['read_username'].nil? || !config.key?('read_passwd') || config['read_passwd'].nil?
+        @log.warn("Readability username has not been configured, please edit your slogger_config file.")
+        return
+      end
+      if !config.key?('read_key') || config['read_key'].nil? || !config.key?('read_secret') || config['read_secret'].nil?
+        @log.warn("Readability API has not been configured, please edit your slogger_config file.")
+        return
+      end
+    else
+      @log.warn("Readability has not been configured, please edit your slogger_config file.")
+      return
+    end
 
+    config['read_tags'] ||= ''
+    username = config['read_username']
+    passwd = config['read_passwd']
+    consumer_key = config['read_key']
+    consumer_secret = config['read_secret']
+    favorites_only=config['read_favorites_only'] ? 1 : 0
+    yest = @timespan.strftime("%Y-%m-%d")
+    @log.info("Getting Readability posts for #{username}")
+    output = ''
+
+    begin
+      consumer = OAuth::Consumer.new(consumer_key, consumer_secret,
+        :site               => "https://www.readability.com",
+        :access_token_path  => '/api/rest/v1/oauth/access_token/')
+      access_token =  consumer.get_access_token(nil, {}, {
+        'x_auth_mode' => 'client_auth',
+        'x_auth_username' => username,
+        'x_auth_password' => passwd})
+    rescue OAuth::Unauthorized => e
+      @log.error("Error with Readability API key/secret: #{e}")
+    end
+
+    unless access_token == nil
+      begin
+        burl = "/api/rest/v1/bookmarks/?archive=0&added_since=#{yest}&favorite=#{favorites_only}"
+        res = access_token.get(burl)
+        entries=JSON.parse(res.body)
+        entries["bookmarks"].each do |item|
+          output+="* [#{item["article"]["title"]}](https://www.readability.com/articles/#{item["article"]["id"]})\n>#{item["article"]["excerpt"]}\n\n"
+        end
+      rescue Exception => e
+        @log.error("Error getting reading list for #{username}: #{e}")
+        return ''
+      end
+      unless output == ''
+        @@music_content += "##### Readability\n" + output + "\n"
+      end
+    end
+  end
 
   # ---------------------------
   # Reading
@@ -1013,6 +1084,7 @@ class DailyLogger < Slogger
     content = ''
 
     do_instapaper
+    do_readability
 
     if @@reading_content != ''
       content += "### Reading\n" + @@reading_content + "\n"
