@@ -64,7 +64,11 @@ config = {
     'read_passwd is a string with your Readability password',
     'read_key is a string with your Readability API key',
     'read_secret is a string with your Readability API secret',
-    'read_favorites_only is a boolean to only return favorites'
+    'read_favorites_only is a boolean to only return favorites',
+    '***Pocket***',
+    'Logs today\'s posts to Pocket.',
+    'pocket_username is a string with your Pocket username',
+    'pocket_passwd is a string with your Pocket password'
   ],
   'foursquare_feed' => '',
   'instapaper_feeds' => [],
@@ -96,7 +100,9 @@ config = {
   'read_passwd' => nil,
   'read_key' => nil,
   'read_secret' => nil,
-  'read_favorites_only' => false
+  'read_favorites_only' => false,
+  'pocket_username' => '',
+  'pocket_passwd' => ''
 }
 $slog.register_plugin({ 'class' => 'DailyLogger', 'config' => config })
 
@@ -1019,7 +1025,7 @@ class DailyLogger < Slogger
   end
 
   # ---------------------------
-  # Reading
+  # Readability
   # ---------------------------
   def do_readability
     if @config.key?(self.class.name)
@@ -1076,6 +1082,66 @@ class DailyLogger < Slogger
       end
     end
   end
+
+  # ---------------------------
+  # Pocket
+  # ---------------------------
+  def do_pocket
+    if @config.key?(self.class.name)
+      config = @config[self.class.name]
+      if !config.key?('pocket_username') || config['pocket_username'].nil?
+        @log.warn("Pocket username has not been configured, please edit your slogger_config file.")
+        return
+      end
+    else
+      @log.warn("Pocket has not been configured, please edit your slogger_config file.")
+      return
+    end
+
+    config['pocket_tags'] ||= ''
+    username = config['pocket_username']
+    password = config['pocket_passwd']
+    today = @timespan
+
+    @log.info("Getting Pocket posts for #{username}")
+    output = ''
+
+    ["read","unread"].each {|kind|
+      rss_feed = "https://getpocket.com/users/#{username.strip}/feed/#{kind}"
+      title = case kind
+      when "read" then "###### Items read today:"
+      when "unread" then "###### Items saved today:"
+      end
+
+      begin
+        rss_content = ""
+        open(rss_feed, http_basic_authentication: [username, password]) do |f|
+          rss_content = f.read
+        end
+        tempoutput = ""
+        rss = RSS::Parser.parse(rss_content, false)
+
+        rss.items.each { |item|
+          item_date = Time.parse(item.pubDate.to_s)
+          if item_date > @timespan
+            tempoutput += "* [#{item.title}](#{item.link})\n"
+          else
+            break
+          end
+        }
+        output += "#{title}\n\n#{tempoutput}\n" unless tempoutput == ""
+
+      rescue Exception => e
+        puts "Error getting posts for #{username}"
+        p e
+        return ''
+      end
+    }
+    unless output == ''
+      @@reading_content += "##### Pocket\n\n#{output}"
+    end
+  end
+
 
   # ---------------------------
   # Reading
