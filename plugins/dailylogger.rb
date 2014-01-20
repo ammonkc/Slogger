@@ -1016,7 +1016,7 @@ class DailyLogger < Slogger
     content = ''
 
     do_github
-    do_gist
+    # do_gist
 
     if @@code_content != ''
       content += "### Code\n" + @@code_content + "\n"
@@ -1037,8 +1037,13 @@ class DailyLogger < Slogger
     do_code
 
     options = {}
-    options['content'] = @@daily_content
-    options['tags'] = ['daily logs']
-    DayOne.new.to_dayone(options)
+
+    if @@daily_content != ''
+      @@daily_content = "# Daily Logs for #{Time.now.strftime(@date_format)}\n\n" + @@daily_content
+      options['content'] = @@daily_content
+      options['tags'] = ['daily logs']
+      DayOne.new.to_dayone(options)
+    end
+
   end
 end
