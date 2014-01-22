@@ -68,7 +68,12 @@ config = {
     '***Pocket***',
     'Logs today\'s posts to Pocket.',
     'pocket_username is a string with your Pocket username',
-    'pocket_passwd is a string with your Pocket password'
+    'pocket_passwd is a string with your Pocket password',
+    '***Trakt***',
+    'trakt_feed is a string containing the RSS feed for your read books',
+    'trakt_save_image will save the media image as the main image for the entry',
+    'trakt_tv_tags are tags you want to add to every TV entry',
+    'trakt_movie_tags are tags you want to add to every movie entry'
   ],
   'foursquare_feed' => '',
   'instapaper_feeds' => [],
@@ -102,7 +107,9 @@ config = {
   'read_secret' => nil,
   'read_favorites_only' => false,
   'pocket_username' => '',
-  'pocket_passwd' => ''
+  'pocket_passwd' => '',
+  'trakt_feed' => '',
+  'trakt_save_image' => true
 }
 $slog.register_plugin({ 'class' => 'DailyLogger', 'config' => config })
 
@@ -126,6 +133,8 @@ class DailyLogger < Slogger
   @@social_content = ''
   @@fitness_content = ''
   @@music_content = ''
+  @@tv_content = ''
+  @@movie_content = ''
   @@code_content = ''
 
   # ---------------------------
@@ -1142,6 +1151,116 @@ class DailyLogger < Slogger
     end
   end
 
+  # ---------------------------
+  # Trakt
+  # ---------------------------
+  def do_trakt
+    feed = ''
+    if @config.key?(self.class.name)
+      config = @config[self.class.name]
+      # check for a required key to determine whether setup has been completed or not
+      if !config.key?('trakt_feed') || config['trakt_feed'] == ''
+        @log.warn("TraktLogger has not been configured or an option is invalid, please edit your slogger_config file.")
+        return
+      else
+        feed = config['trakt_feed']
+      end
+    else
+      @log.warn("TraktLogger has not been configured or a feed is invalid, please edit your slogger_config file.")
+      return
+    end
+    @log.info("Logging TraktLogger watched media")
+
+    retries = 0
+    success = false
+    until success
+      if parse_trakt_feed(feed, config)
+        success = true
+      else
+        break if $options[:max_retries] == retries
+        retries += 1
+        @log.error("Error parsing Trakt feed, retrying (#{retries}/#{$options[:max_retries]})")
+        sleep 2
+      end
+      unless success
+        @log.fatal("Could not parse feed #{feed}")
+      end
+    end
+  end
+
+  def parse_trakt_feed(rss_feed, config)
+    save_image = config['trakt_save_image']
+    unless save_image.is_a? FalseClass
+      save_image = true
+    end
+
+    begin
+      rss_content = ""
+
+      feed_download_response = Net::HTTP.get_response(URI.parse(rss_feed))
+      xml_data = feed_download_response.body
+      xml_data.gsub!('media:', '') #Fix REXML unhappiness
+      doc = REXML::Document.new(xml_data)
+      doc.root.each_element('//item') { |item|
+        tv_content = ''
+        movie_content = ''
+        description = ''
+        tv_entrytext = ''
+        movie_entrytext = ''
+
+        item_date = Time.parse(item.elements['pubDate'].text)
+
+        if item_date > @timespan
+          title = item.elements['title'].text
+
+          # is this tv or movie?
+          is_tv = title.match(/ \d+x\d+ /) ? true : false
+
+          imageurl = save_image ? item.elements['content'].attributes.get_attribute("url").value : false
+
+          description = item.elements['description'].text rescue ''
+          description.sub!(/^.*<br><br>/, "")
+
+          if description != ''
+            description = "   > #{description}" rescue ''
+            description = "\n#{description}"
+          end
+
+          if is_tv
+            tv_content += "* [#{title.gsub(/\n+/, ' ').strip}](#{item.elements['link'].text.strip})#{description}\n"
+          else
+            movie_content += "* [#{title.gsub(/\n+/, ' ').strip}](#{item.elements['link'].text.strip})#{description}\n"
+          end
+
+          sl = DayOne.new
+          if imageurl
+            options['datestamp'] = item_date.utc.iso8601
+            options['uuid'] = %x{uuidgen}.gsub(/-/, '').strip
+            header = "### Watched A #{is_tv ? 'TV Show' : 'Movie'}\n"
+            options['content'] = "#{header}[#{title.gsub(/\n+/, ' ').strip}](#{item.elements['link'].text.strip})#{description}"
+            sl.to_dayone(options) if sl.save_image(imageurl, options['uuid'])
+          end
+        else
+          break
+        end
+        if tv_content != ''
+          tv_entrytext = "\n#{tv_content}\n"
+        end
+        @@tv_content += tv_entrytext unless tv_entrytext == ''
+
+        if movie_content != ''
+          movie_entrytext = "\n#{movie_content}\n"
+        end
+        @@movie_content += movie_entrytext unless movie_entrytext == ''
+      }
+    rescue Exception => e
+      @log.error("BOOM: #{e}")
+      p e
+      return false
+    end
+
+    true
+  end
 
   # ---------------------------
   # Reading
@@ -1185,6 +1304,26 @@ class DailyLogger < Slogger
       content += "### Music\n" + @@music_content + "\n"
     end
     @@daily_content += content unless content == ''
+  end
+
+  # ---------------------------
+  # TV Shows
+  # ---------------------------
+  def do_video
+    tv_content = ''
+    movie_content = ''
+
+    do_trakt
+
+    if @@tv_content != ''
+      tv_content += "### TV Shows\n" + @@tv_content + "\n"
+    end
+    @@daily_content += tv_content unless tv_content == ''
+
+    if @@movie_content != ''
+      movie_content += "### Movies\n" + @@movie_content + "\n"
+    end
+    @@daily_content += movie_content unless movie_content == ''
   end
 
   # ---------------------------
@@ -1253,6 +1392,7 @@ class DailyLogger < Slogger
     do_fitness
     do_places
     do_music
+    do_video
     do_reading
     do_bookmarks
     do_code
