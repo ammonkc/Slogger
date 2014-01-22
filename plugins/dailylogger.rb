@@ -1307,7 +1307,7 @@ class DailyLogger < Slogger
   end
 
   # ---------------------------
-  # TV Shows
+  # Video
   # ---------------------------
   def do_video
     tv_content = ''
