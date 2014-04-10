@@ -51,8 +51,11 @@ class DayOne < Slogger
     @dayonepath = Slogger.new.storage_path
     source = imageurl.gsub(/^https/,'http')
     match = source.match(/(\..{3,4})($|\?|%22)/)
-    ext = match.nil? ? match[1] : '.jpg'
+    # ext = match.nil? ? match[1] : '.jpg'
     target = @dayonepath + "/photos/#{uuid}.jpg"
+    if imageurl.match('ift.tt')
+      imageurl = Net::HTTP.get_response(URI.parse(imageurl))['location']
+    end
     begin
       Net::HTTP.get_response(URI.parse(imageurl)) do |http|
         data = http.body
