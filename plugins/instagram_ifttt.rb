@@ -72,6 +72,11 @@ class Instagram < Slogger
       #   Date posted
       #
       image_url = file_read[0]
+
+      if image_url.match('ift.tt')
+         image_url = Net::HTTP.get_response(URI.parse(image_url))['location']
+      end
+
       image_caption = file_read[1]
       date_posted = Time.parse(file_read[-1])
 
