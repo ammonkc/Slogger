@@ -8,6 +8,7 @@ class DayOne < Slogger
     @dayonepath = storage_path
     markdown = @dayonepath =~ /Journal[._]dayone\/?$/ ? false : true
     content = options['content'] || ''
+    # Defaults to tags passed as options, but falls back to hashtags if option isn't present
     tags = options['tags'] || content.scan(/#([A-Za-z0-9]+)/m).map { |tag| tag[0] }.delete_if {|tag| tag =~ /^\d+$/ }.uniq.sort
     unless markdown
       uuid = options['uuid'] || %x{uuidgen}.gsub(/-/,'').strip
